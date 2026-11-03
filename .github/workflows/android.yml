@@ -1,0 +1,52 @@
+name: Gerar APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Compilar APK de teste
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o codigo do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias do projeto
+        run: npm install
+
+      - name: Compilar aplicacao web
+        run: npm run build
+
+      - name: Criar projeto Android com Capacitor
+        run: npx cap add android
+
+      - name: Sincronizar arquivos Android
+        run: npx cap sync android
+
+      - name: Gerar APK de depuracao
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug
+
+      - name: Publicar APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: cantor-cristao-digital-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
